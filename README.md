@@ -146,3 +146,73 @@ You can use this data to explore the workflow in different scenarios.
 ## License
 
 [MIT License](LICENSE)
+
+## Azure Deployment Instructions
+
+### Prerequisites
+
+- Azure account with an active subscription
+- Azure CLI installed or access to Azure Portal
+- GitHub account (for CI/CD setup)
+
+### Option 1: Deploy with GitHub Actions (Recommended)
+
+1. **Create an Azure Web App**
+
+   ```bash
+   # Login to Azure
+   az login
+   
+   # Create a resource group
+   az group create --name medicaid-app-rg --location eastus
+   
+   # Create an App Service plan
+   az appservice plan create --name medicaid-app-plan --resource-group medicaid-app-rg --sku B1 --is-linux
+   
+   # Create a web app
+   az webapp create --name your-medicaid-app --resource-group medicaid-app-rg --plan medicaid-app-plan --runtime "PYTHON:3.11"
+   ```
+
+2. **Configure GitHub Secrets**
+
+   In your GitHub repository, navigate to Settings > Secrets and add:
+   - `AZURE_WEBAPP_NAME`: The name of your Azure web app (e.g., your-medicaid-app)
+   - `AZURE_WEBAPP_PUBLISH_PROFILE`: Download from Azure Portal > Your Web App > Get publish profile
+
+3. **Configure Environment Variables in Azure**
+
+   In Azure Portal > Your Web App > Configuration > Application settings, add:
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `SCM_DO_BUILD_DURING_DEPLOYMENT`: Set to `true`
+
+4. **Push Code to GitHub**
+
+   The GitHub Actions workflow will automatically deploy your application to Azure.
+
+### Option 2: Deploy from Local Machine
+
+1. **Create an Azure Web App** as described above
+
+2. **Deploy Using Azure CLI**
+
+   ```bash
+   # Navigate to your project directory
+   cd path/to/medicaid_assist
+   
+   # Deploy to Azure
+   az webapp up --name your-medicaid-app --resource-group medicaid-app-rg --sku B1 --runtime "PYTHON:3.11"
+   ```
+
+3. **Configure Environment Variables** as described above
+
+### Verify Deployment
+
+Once deployed, access your application at:
+- `https://your-medicaid-app.azurewebsites.net`
+
+### Troubleshooting
+
+- **Logs**: Access logs in Azure Portal > Your Web App > Logs > Log stream
+- **Startup Issues**: Check application logs and startup command
+- **Dependencies**: Ensure all dependencies are in requirements.txt
+- **Python Version**: This app is tested with Python 3.11
