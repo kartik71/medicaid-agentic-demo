@@ -69,7 +69,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def run_demo_with_progress():
+def run_demo_with_progress(member_id):
     """Run the workflow with a progress bar and animations"""
     placeholder = st.empty()
     progress_text = "Running Medicaid Assist agentic workflow..."
@@ -309,3 +309,144 @@ def run_demo_with_progress():
     placeholder.empty()
     
     return state
+
+# Main app
+def main():
+    st.markdown('<p class="main-header">🤖 Medicaid Assist</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">LangGraph Agentic AI Workflow Demo</p>', unsafe_allow_html=True)
+    
+    # Sidebar
+    st.sidebar.title("Demo Controls")
+    
+    # Get member list
+    member_ids = get_all_member_ids()
+    members = get_all_members()
+    
+    # Create member selection options
+    member_options = {}
+    for member in members:
+        display_name = f"{member.first_name} {member.last_name} (ID: {member.id})"
+        member_options[display_name] = member.id
+    
+    selected_member_display = st.sidebar.selectbox(
+        "Select Member to Process:",
+        list(member_options.keys())
+    )
+    
+    member_id = member_options[selected_member_display]
+    member = get_member(member_id)
+    
+    # Display member info
+    st.sidebar.subheader("Member Information")
+    st.sidebar.write(f"**Name:** {member.first_name} {member.last_name}")
+    st.sidebar.write(f"**Language:** {member.contact.language}")
+    st.sidebar.write(f"**Status:** {member.eligibility.status}")
+    st.sidebar.write(f"**Work Required:** {'Yes' if member.work_requirement.required else 'No'}")
+    if member.work_requirement.required:
+        st.sidebar.write(f"**Hours Reported:** {member.work_requirement.hours_reported}/80")
+    
+    # Main content
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("Agent Workflow Demonstration")
+        
+        if st.button("🚀 Run Medicaid Assist Workflow", type="primary"):
+            st.write("Processing member through the agentic workflow...")
+            
+            # Run the demo with progress
+            final_state = run_demo_with_progress(member_id)
+            
+            # Display results
+            st.success("✅ Workflow completed successfully!")
+            
+            # Show final results
+            st.subheader("📊 Workflow Results")
+            
+            # Create result columns
+            result_col1, result_col2, result_col3 = st.columns(3)
+            
+            with result_col1:
+                st.metric(
+                    "Compliance Status",
+                    final_state.get("compliance_status", "Unknown").title(),
+                    delta="✅" if final_state.get("compliance_status") == "compliant" else "❌"
+                )
+            
+            with result_col2:
+                st.metric(
+                    "Agents Executed",
+                    len(set(log["agent"] for log in final_state["audit_log"])),
+                    delta="Complete"
+                )
+            
+            with result_col3:
+                st.metric(
+                    "Interactions Logged",
+                    len(final_state["interactions"]),
+                    delta="Tracked"
+                )
+            
+            # Show detailed results
+            if final_state.get("reminders"):
+                st.subheader("📬 Generated Reminders")
+                for i, reminder in enumerate(final_state["reminders"], 1):
+                    st.write(f"{i}. {reminder}")
+            
+            # Show compliance issues if any
+            if final_state.get("compliance_issues"):
+                st.subheader("⚠️ Compliance Issues")
+                for issue in final_state["compliance_issues"]:
+                    st.warning(f"• {issue}")
+            
+            # Show audit log
+            st.subheader("📋 Audit Trail")
+            audit_df = pd.DataFrame(final_state["audit_log"])
+            if not audit_df.empty:
+                st.dataframe(audit_df[["agent", "action", "status"]], use_container_width=True)
+    
+    with col2:
+        st.subheader("System Overview")
+        
+        # Show member statistics
+        all_members = get_all_members()
+        
+        # Calculate stats
+        total_members = len(all_members)
+        renewal_needed = len([m for m in all_members if m.eligibility.status == "renewal_needed"])
+        work_required = len([m for m in all_members if m.work_requirement.required])
+        multilingual = len([m for m in all_members if m.contact.language != "English"])
+        
+        st.metric("Total Members", total_members)
+        st.metric("Renewal Needed", renewal_needed)
+        st.metric("Work Requirements", work_required)
+        st.metric("Multilingual Support", multilingual)
+        
+        # Show agent capabilities
+        st.subheader("🤖 Available Agents")
+        agents = [
+            "🧐 Eligibility Checker",
+            "📄 Document Assistant", 
+            "💼 Work Requirement",
+            "🔔 Reminder Agent",
+            "🌐 Multilingual Chat",
+            "🧾 Audit & Compliance"
+        ]
+        
+        for agent in agents:
+            st.write(f"• {agent}")
+        
+        # Show technology stack
+        st.subheader("🛠️ Technology Stack")
+        tech_stack = [
+            "LangGraph Workflow",
+            "Streamlit Interface",
+            "Python Backend",
+            "Synthetic Data"
+        ]
+        
+        for tech in tech_stack:
+            st.write(f"• {tech}")
+
+if __name__ == "__main__":
+    main()

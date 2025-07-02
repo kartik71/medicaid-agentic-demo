@@ -22,26 +22,30 @@ class ContactInfo(BaseModel):
     phone: Optional[str] = None
     preferred_language: str = "English"
     preferred_contact_method: str = "Email"
-    
+    language: str = "English"  # Added for backward compatibility
+
 
 class EligibilityInfo(BaseModel):
     """Member eligibility information."""
     program: str
     status: str
-    renewal_date: datetime
-    last_verified: Optional[datetime] = None
+    renewal_date: str  # Changed to string for easier handling
+    last_verified: Optional[str] = None
     category: str
     income_verified: bool = False
+    required_documents: List[str] = []
 
 
 class WorkRequirement(BaseModel):
     """Work requirement tracking information."""
     required: bool = False
-    hours_needed: int = 0
+    hours_needed: int = 80
     exempt_reason: Optional[str] = None
     current_month_hours: int = 0
+    hours_reported: int = 0  # Added for backward compatibility
     verified: bool = False
-    last_updated: Optional[datetime] = None
+    last_updated: Optional[str] = None
+    exemption_status: str = "none"  # Added for backward compatibility
 
 
 class Member(BaseModel):
@@ -52,7 +56,7 @@ class Member(BaseModel):
     id: str
     first_name: str
     last_name: str
-    date_of_birth: datetime
+    date_of_birth: str  # Changed to string for easier handling
     address: Address
     contact: ContactInfo
     eligibility: EligibilityInfo
@@ -64,12 +68,16 @@ class Member(BaseModel):
 
     def is_renewal_due_soon(self, days_threshold: int = 60) -> bool:
         """Check if renewal is due within specified days threshold."""
-        today = datetime.now()
-        delta = self.eligibility.renewal_date - today
-        return 0 < delta.days <= days_threshold
+        try:
+            renewal_date = datetime.fromisoformat(self.eligibility.renewal_date.replace('Z', '+00:00'))
+            today = datetime.now()
+            delta = renewal_date - today
+            return 0 < delta.days <= days_threshold
+        except:
+            return False
 
     def get_missing_documents(self) -> List[str]:
         """Return list of documents needed for renewal."""
-        # Placeholder - In a real implementation, this would compare
-        # required docs against submitted docs
-        return []
+        required_docs = self.eligibility.required_documents
+        submitted_docs = list(self.documents.keys()) if self.documents else []
+        return [doc for doc in required_docs if doc not in submitted_docs]

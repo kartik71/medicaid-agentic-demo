@@ -5,10 +5,8 @@ This integrates six specialized agents in a LangGraph workflow.
 """
 
 import os
-from dotenv import load_dotenv
+from datetime import datetime
 from typing import Dict, List, Any, TypedDict, Optional
-from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, END
 
 # Import agent modules
 from agents.eligibility_checker import create_eligibility_checker_agent
@@ -23,77 +21,17 @@ from utils.logger import setup_logger
 from models.member import Member
 from models.state import AgentState
 
-# Load environment variables
-load_dotenv()
-
 # Set up logging
 logger = setup_logger()
 
-def create_medicaid_workflow(model_name: str = "gpt-4", temperature: float = 0.0) -> StateGraph:
+def create_workflow():
     """
-    Create the Medicaid Assist workflow using LangGraph.
-    
-    Args:
-        model_name: The LLM model to use
-        temperature: The temperature setting for generation
-        
-    Returns:
-        A configured StateGraph representing the workflow
+    Create a simple workflow function that doesn't require LangGraph.
+    This allows the demo to work without external dependencies.
     """
-    # Initialize the LLM
-    llm = ChatOpenAI(model=model_name, temperature=temperature)
-    
-    # Create agent instances
-    eligibility_agent = create_eligibility_checker_agent(llm)
-    reminder_agent = create_reminder_agent(llm)
-    document_agent = create_document_assistant_agent(llm)
-    work_agent = create_work_requirement_agent(llm)
-    chat_agent = create_multilingual_chat_agent(llm)
-    audit_agent = create_audit_compliance_agent(llm)
-    
-    # Initialize the workflow graph
-    workflow = StateGraph(AgentState)
-    
-    # Add nodes for each agent
-    workflow.add_node("eligibility", eligibility_agent)
-    workflow.add_node("reminder", reminder_agent)
-    workflow.add_node("document", document_agent)
-    workflow.add_node("work", work_agent)
-    workflow.add_node("chat", chat_agent)
-    workflow.add_node("audit", audit_agent)
-    
-    # Define conditional routing based on member state and needs
-    def route_from_eligibility(state: AgentState) -> str:
-        """Route to appropriate next agent based on eligibility check results."""
-        if not state["eligibility_verified"]:
-            return "document"  # Need documentation
-        elif state["work_requirements_needed"]:
-            return "work"  # Need work requirement verification
-        else:
-            return "reminder"  # Send renewal reminder
-    
-    # Add conditional routing edges
-    workflow.add_conditional_edges(
-        "eligibility",
-        route_from_eligibility,
-        {
-            "document": "document",
-            "work": "work",
-            "reminder": "reminder"
-        }
-    )
-    
-    # Add standard edges
-    workflow.add_edge("document", "audit")
-    workflow.add_edge("work", "audit")
-    workflow.add_edge("reminder", "audit")
-    workflow.add_edge("chat", "audit")  # Chat can happen anytime but logs to audit
-    
-    # All paths eventually route to audit for compliance tracking
-    workflow.add_edge("audit", END)
-    
-    # Entry point is the eligibility checker
-    workflow.set_entry_point("eligibility")
+    def workflow(state: AgentState) -> AgentState:
+        """Simple workflow that processes a member through all agents."""
+        return simulate_workflow(state)
     
     return workflow
 
@@ -111,11 +49,11 @@ def process_member(member_id: str) -> Dict[str, Any]:
     from storage.member_repository import get_member
     member = get_member(member_id)
     
-    # Initialize workflow
-    workflow = create_medicaid_workflow()
+    if not member:
+        raise ValueError(f"Member {member_id} not found")
     
-    # Compile the workflow
-    app = workflow.compile()
+    # Initialize workflow
+    workflow = create_workflow()
     
     # Set initial state
     initial_state = AgentState(
@@ -131,7 +69,7 @@ def process_member(member_id: str) -> Dict[str, Any]:
     
     # Execute the workflow
     logger.info(f"Starting workflow for member {member_id}")
-    result = app.invoke(initial_state)
+    result = workflow(initial_state)
     logger.info(f"Workflow completed for member {member_id}")
     
     return result
@@ -219,6 +157,7 @@ def simulate_workflow(state: AgentState) -> AgentState:
         hours_reported = member.work_requirement.hours_reported
         hours_required = 80
         state["work_requirements_met"] = hours_reported >= hours_required
+        state["work_requirements_needed"] = not state["work_requirements_met"]
         
         # Add work requirement interaction
         state["interactions"].append({
@@ -255,6 +194,10 @@ def simulate_workflow(state: AgentState) -> AgentState:
     if member.work_requirement.required and not state.get("work_requirements_met"):
         reminders.append(f"You need to report {80 - member.work_requirement.hours_reported} more work hours this month.")
     
+    # Store the reminders
+    state["reminders"] = reminders
+    state["reminders_sent"] = len(reminders) > 0
+    
     # Add reminder interaction if any reminders were generated
     if reminders:
         state["interactions"].append({
@@ -279,6 +222,7 @@ def simulate_workflow(state: AgentState) -> AgentState:
     if member.contact.language != "English":
         logger.info(f"Simulating multilingual support for {member.contact.language}")
         
+        state["multilingual_supported"] = True
         state["interactions"].append({
             "timestamp": datetime.now().isoformat(),
             "agent": "multilingual_chat",
@@ -296,6 +240,8 @@ def simulate_workflow(state: AgentState) -> AgentState:
             "language": member.contact.language,
             "status": "completed"
         })
+    else:
+        state["multilingual_supported"] = False
     
     # Step 6: Final audit and compliance check
     logger.info("Simulating audit and compliance verification")
@@ -348,34 +294,7 @@ def process_member_with_simulation(member_id: str) -> Dict[str, Any]:
     Returns:
         The final state after workflow completion
     """
-    # Get member data
-    from storage.member_repository import get_member
-    member = get_member(member_id)
-    
-    # Initialize workflow
-    workflow = create_medicaid_workflow()
-    
-    # Compile the workflow
-    app = workflow.compile()
-    
-    # Set initial state
-    initial_state = AgentState(
-        member=member,
-        eligibility_verified=False,
-        work_requirements_needed=False,
-        documents_required=[],
-        documents_submitted=[],
-        work_hours_reported=0,
-        interactions=[],
-        audit_log=[]
-    )
-    
-    # Execute the workflow with simulation
-    logger.info(f"Starting workflow for member {member_id}")
-    result = simulate_workflow(initial_state)
-    logger.info(f"Workflow completed for member {member_id}")
-    
-    return result
+    return process_member(member_id)
 
 if __name__ == "__main__":
     # Example usage
@@ -383,21 +302,14 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Medicaid Assist workflow")
     parser.add_argument("--member_id", type=str, help="Member ID to process")
-    parser.add_argument("--run_api", action="store_true", help="Run as API server")
     
     args = parser.parse_args()
     
-    if args.run_api:
-        # Start API server
-        import uvicorn
-        from api.app import app
-        
-        uvicorn.run(app, host="0.0.0.0", port=8000)
-    elif args.member_id:
+    if args.member_id:
         # Process single member
         result = process_member_with_simulation(args.member_id)
         print(f"Processing completed for {args.member_id}")
         print(f"Eligibility status: {result['eligibility_verified']}")
         print(f"Audit logs generated: {len(result['audit_log'])}")
     else:
-        print("Please provide --member_id or --run_api flag")
+        print("Please provide --member_id flag")
