@@ -6,6 +6,8 @@ import PatientSelector from './components/PatientSelector';
 import WorkflowStepper from './components/WorkflowStepper';
 import AgentProcessor from './components/AgentProcessor';
 import ResultsView from './components/ResultsView';
+import ExecutiveDashboard from './components/ExecutiveDashboard';
+import TechnologyStack from './components/TechnologyStack';
 import { mockPatients } from './data/mockData';
 
 function App() {
@@ -13,6 +15,10 @@ function App() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [workflowResults, setWorkflowResults] = useState(null);
   const [processedPatients, setProcessedPatients] = useState([]);
+  const [workflowMode, setWorkflowMode] = useState('autonomous'); // 'autonomous' or 'hitl'
+  const [currentAgent, setCurrentAgent] = useState(0);
+  const [agentResults, setAgentResults] = useState({});
+  const [totalSavings, setTotalSavings] = useState(0);
 
   // Initialize with dashboard view
   useEffect(() => {
@@ -27,6 +33,8 @@ function App() {
   const handlePatientSelected = (patient) => {
     setSelectedPatient(patient);
     setCurrentView('workflow');
+    setCurrentAgent(0);
+    setAgentResults({});
   };
 
   const handleWorkflowComplete = (results) => {
@@ -35,7 +43,9 @@ function App() {
     
     // Add to processed patients if not already processed
     if (!processedPatients.find(p => p.id === selectedPatient.id)) {
-      setProcessedPatients(prev => [...prev, { ...selectedPatient, results }]);
+      const newProcessedPatient = { ...selectedPatient, results };
+      setProcessedPatients(prev => [...prev, newProcessedPatient]);
+      setTotalSavings(prev => prev + 138); // $138 savings per case
     }
   };
 
@@ -43,16 +53,49 @@ function App() {
     setCurrentView('dashboard');
     setSelectedPatient(null);
     setWorkflowResults(null);
+    setCurrentAgent(0);
+    setAgentResults({});
   };
 
   const handleBackToPatientSelector = () => {
     setCurrentView('patient-selector');
     setSelectedPatient(null);
     setWorkflowResults(null);
+    setCurrentAgent(0);
+    setAgentResults({});
   };
 
-  const handleStartProcessing = () => {
+  const handleStartProcessing = (mode) => {
+    setWorkflowMode(mode);
     setCurrentView('processing');
+    setCurrentAgent(0);
+    setAgentResults({});
+  };
+
+  const handleAgentComplete = (agentIndex, result) => {
+    setAgentResults(prev => ({
+      ...prev,
+      [agentIndex]: result
+    }));
+    
+    if (workflowMode === 'hitl') {
+      // In HITL mode, wait for user to proceed to next agent
+      setCurrentAgent(agentIndex + 1);
+    }
+  };
+
+  const handleProceedToNextAgent = () => {
+    if (currentAgent < 5) { // 6 agents total (0-5)
+      setCurrentAgent(currentAgent + 1);
+    }
+  };
+
+  const handleViewExecutiveDashboard = () => {
+    setCurrentView('executive-dashboard');
+  };
+
+  const handleViewTechnologyStack = () => {
+    setCurrentView('technology-stack');
   };
 
   return (
@@ -71,8 +114,54 @@ function App() {
             >
               <Dashboard 
                 processedCount={processedPatients.length}
+                totalSavings={totalSavings}
                 onStartWorkflow={handleStartWorkflow}
+                onViewExecutiveDashboard={handleViewExecutiveDashboard}
+                onViewTechnologyStack={handleViewTechnologyStack}
               />
+            </motion.div>
+          )}
+
+          {currentView === 'executive-dashboard' && (
+            <motion.div
+              key="executive-dashboard"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ExecutiveDashboard 
+                processedCount={processedPatients.length}
+                totalSavings={totalSavings}
+              />
+              <div className="mt-8 text-center">
+                <button
+                  onClick={handleBackToDashboard}
+                  className="btn-secondary"
+                >
+                  Back to Main Dashboard
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {currentView === 'technology-stack' && (
+            <motion.div
+              key="technology-stack"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <TechnologyStack />
+              <div className="mt-8 text-center">
+                <button
+                  onClick={handleBackToDashboard}
+                  className="btn-secondary"
+                >
+                  Back to Main Dashboard
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -118,7 +207,12 @@ function App() {
             >
               <AgentProcessor
                 patient={selectedPatient}
+                workflowMode={workflowMode}
+                currentAgent={currentAgent}
+                agentResults={agentResults}
                 onComplete={handleWorkflowComplete}
+                onAgentComplete={handleAgentComplete}
+                onProceedToNextAgent={handleProceedToNextAgent}
                 onBack={() => setCurrentView('workflow')}
               />
             </motion.div>

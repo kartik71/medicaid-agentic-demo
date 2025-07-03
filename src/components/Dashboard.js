@@ -6,11 +6,13 @@ import {
   UserGroupIcon, 
   ShieldCheckIcon,
   PlayIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  CogIcon,
+  CodeBracketIcon
 } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
-const Dashboard = ({ processedCount, onStartWorkflow }) => {
+const Dashboard = ({ processedCount, totalSavings, onStartWorkflow, onViewExecutiveDashboard, onViewTechnologyStack }) => {
   const metrics = [
     {
       title: 'Disenrollment Reduction',
@@ -24,7 +26,7 @@ const Dashboard = ({ processedCount, onStartWorkflow }) => {
     {
       title: 'Annual Cost Savings',
       value: '$2.4M',
-      change: `+$${(processedCount * 138).toLocaleString()}`,
+      change: `+$${totalSavings.toLocaleString()}`,
       icon: CurrencyDollarIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -80,15 +82,37 @@ const Dashboard = ({ processedCount, onStartWorkflow }) => {
           Real-time insights into your Medicaid AI automation performance
         </p>
         
-        <motion.button
-          onClick={onStartWorkflow}
-          className="btn-primary flex items-center space-x-2 mx-auto"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <PlayIcon className="h-5 w-5" />
-          <span>Start Patient Workflow</span>
-        </motion.button>
+        <div className="flex flex-wrap justify-center gap-4">
+          <motion.button
+            onClick={onStartWorkflow}
+            className="btn-primary flex items-center space-x-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <PlayIcon className="h-5 w-5" />
+            <span>Start Patient Workflow</span>
+          </motion.button>
+          
+          <motion.button
+            onClick={onViewExecutiveDashboard}
+            className="btn-secondary flex items-center space-x-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ChartBarIcon className="h-5 w-5" />
+            <span>Executive Analytics</span>
+          </motion.button>
+          
+          <motion.button
+            onClick={onViewTechnologyStack}
+            className="btn-secondary flex items-center space-x-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <CodeBracketIcon className="h-5 w-5" />
+            <span>Technology Stack</span>
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Key Metrics */}
@@ -182,6 +206,47 @@ const Dashboard = ({ processedCount, onStartWorkflow }) => {
         </motion.div>
       </div>
 
+      {/* Workflow Modes */}
+      <motion.div 
+        className="bg-white rounded-xl p-6 shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <CogIcon className="h-6 w-6 mr-2" />
+          Available Workflow Modes
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-900 mb-2">🤖 Autonomous AI Mode</h4>
+            <p className="text-blue-700 text-sm mb-3">
+              Fully automated processing with AI agents working independently through all workflow steps.
+            </p>
+            <ul className="text-blue-600 text-xs space-y-1">
+              <li>• Complete automation from start to finish</li>
+              <li>• Fastest processing time (6-8 seconds)</li>
+              <li>• Ideal for high-volume processing</li>
+              <li>• 99.7% accuracy rate</li>
+            </ul>
+          </div>
+          
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h4 className="font-semibold text-purple-900 mb-2">👤 Human-in-the-Loop Mode</h4>
+            <p className="text-purple-700 text-sm mb-3">
+              Step-by-step processing with human oversight and approval at each agent stage.
+            </p>
+            <ul className="text-purple-600 text-xs space-y-1">
+              <li>• Manual approval for each agent step</li>
+              <li>• Review AI recommendations before proceeding</li>
+              <li>• Override AI decisions when needed</li>
+              <li>• Enhanced compliance and audit trail</li>
+            </ul>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Live Stats */}
       {processedCount > 0 && (
         <motion.div 
@@ -198,7 +263,7 @@ const Dashboard = ({ processedCount, onStartWorkflow }) => {
                 <p className="text-blue-100">Cases Processed</p>
               </div>
               <div>
-                <p className="text-3xl font-bold">${(processedCount * 138).toLocaleString()}</p>
+                <p className="text-3xl font-bold">${totalSavings.toLocaleString()}</p>
                 <p className="text-blue-100">Total Savings</p>
               </div>
               <div>

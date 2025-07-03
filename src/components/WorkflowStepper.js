@@ -9,11 +9,14 @@ import {
   BriefcaseIcon,
   BellIcon,
   GlobeAltIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  CogIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [selectedMode, setSelectedMode] = useState('autonomous');
 
   const agents = [
     {
@@ -111,6 +114,10 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
     return total + parseFloat(agent.estimatedTime.replace('s', ''));
   }, 0);
 
+  const handleStartProcessing = () => {
+    onStartProcessing(selectedMode);
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
@@ -124,8 +131,73 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
           AI Workflow Configuration
         </h1>
         <p className="text-lg text-gray-600">
-          Review the automated workflow for {patient.firstName} {patient.lastName}
+          Configure and review the automated workflow for {patient.firstName} {patient.lastName}
         </p>
+      </motion.div>
+
+      {/* Workflow Mode Selection */}
+      <motion.div 
+        className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <CogIcon className="h-6 w-6 mr-2" />
+          Select Workflow Mode
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <motion.div
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+              selectedMode === 'autonomous' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 bg-gray-50 hover:border-blue-300'
+            }`}
+            onClick={() => setSelectedMode('autonomous')}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center mb-3">
+              <CogIcon className="h-8 w-8 text-blue-600 mr-3" />
+              <div>
+                <h4 className="font-semibold text-gray-900">🤖 Autonomous AI Mode</h4>
+                <p className="text-sm text-gray-600">Fully automated processing</p>
+              </div>
+            </div>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Complete automation from start to finish</li>
+              <li>• Fastest processing time (~{totalEstimatedTime.toFixed(1)}s)</li>
+              <li>• Ideal for high-volume processing</li>
+              <li>• 99.7% accuracy rate</li>
+            </ul>
+          </motion.div>
+          
+          <motion.div
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+              selectedMode === 'hitl' 
+                ? 'border-purple-500 bg-purple-50' 
+                : 'border-gray-200 bg-gray-50 hover:border-purple-300'
+            }`}
+            onClick={() => setSelectedMode('hitl')}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center mb-3">
+              <UserGroupIcon className="h-8 w-8 text-purple-600 mr-3" />
+              <div>
+                <h4 className="font-semibold text-gray-900">👤 Human-in-the-Loop Mode</h4>
+                <p className="text-sm text-gray-600">Step-by-step with human oversight</p>
+              </div>
+            </div>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Manual approval for each agent step</li>
+              <li>• Review AI recommendations before proceeding</li>
+              <li>• Override AI decisions when needed</li>
+              <li>• Enhanced compliance and audit trail</li>
+            </ul>
+          </motion.div>
+        </div>
       </motion.div>
 
       {/* Patient Summary */}
@@ -133,7 +205,7 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
         className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
       >
         <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
           <UserIcon className="h-6 w-6 mr-2" />
@@ -176,9 +248,9 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
         className="bg-white rounded-xl p-6 shadow-lg"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
       >
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Workflow Steps</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Workflow Steps Preview</h3>
         
         <div className="space-y-4">
           {agents.map((agent, index) => (
@@ -187,7 +259,7 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
               className={`workflow-step border-l-4 ${getStepColor(agent, currentStep === index)}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + index * 0.1, duration: 0.3 }}
+              transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
               onHoverStart={() => setCurrentStep(index)}
             >
               <div className="flex items-start space-x-4">
@@ -248,12 +320,16 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
             <div>
               <h4 className="font-semibold text-blue-900">Workflow Summary</h4>
               <p className="text-sm text-blue-700">
-                {agents.length} AI agents will process this case sequentially
+                {agents.length} AI agents will process this case in {selectedMode} mode
               </p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-blue-900">{totalEstimatedTime.toFixed(1)}s</p>
-              <p className="text-sm text-blue-700">Total estimated time</p>
+              <p className="text-2xl font-bold text-blue-900">
+                {selectedMode === 'autonomous' ? `${totalEstimatedTime.toFixed(1)}s` : 'Variable'}
+              </p>
+              <p className="text-sm text-blue-700">
+                {selectedMode === 'autonomous' ? 'Total estimated time' : 'Depends on review time'}
+              </p>
             </div>
           </div>
         </div>
@@ -264,7 +340,7 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
         className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
       >
         <h3 className="text-xl font-bold text-gray-900 mb-4">🤖 AI Agent Capabilities</h3>
         
@@ -284,7 +360,7 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
               className="flex items-center text-gray-700 p-2 bg-white rounded-lg"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 + index * 0.05, duration: 0.3 }}
+              transition={{ delay: 0.6 + index * 0.05, duration: 0.3 }}
             >
               <span className="text-xs">{capability}</span>
             </motion.div>
@@ -305,13 +381,13 @@ const WorkflowStepper = ({ patient, onStartProcessing, onBack }) => {
         </motion.button>
 
         <motion.button
-          onClick={onStartProcessing}
+          onClick={handleStartProcessing}
           className="btn-primary flex items-center space-x-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
           <PlayIcon className="h-5 w-5" />
-          <span>Start AI Processing</span>
+          <span>Start {selectedMode === 'autonomous' ? 'Autonomous' : 'HITL'} Processing</span>
         </motion.button>
       </div>
     </div>
