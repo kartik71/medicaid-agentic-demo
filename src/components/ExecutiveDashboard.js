@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUpIcon, 
+  ArrowTrendingUpIcon, 
   CurrencyDollarIcon, 
   UserGroupIcon, 
   ShieldCheckIcon 
@@ -14,7 +14,7 @@ const ExecutiveDashboard = ({ processedCount, totalSavings }) => {
       title: 'Disenrollment Reduction',
       value: '94%',
       change: '+12%',
-      icon: TrendingUpIcon,
+      icon: ArrowTrendingUpIcon,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200'
