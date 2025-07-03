@@ -11,10 +11,8 @@ import { mockPatients } from './data/mockData';
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [workflowStep, setWorkflowStep] = useState(0);
   const [workflowResults, setWorkflowResults] = useState(null);
   const [processedPatients, setProcessedPatients] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // Initialize with dashboard view
   useEffect(() => {
@@ -23,20 +21,17 @@ function App() {
 
   const handleStartWorkflow = () => {
     setCurrentView('patient-selector');
-    setWorkflowStep(0);
     setWorkflowResults(null);
   };
 
   const handlePatientSelected = (patient) => {
     setSelectedPatient(patient);
     setCurrentView('workflow');
-    setWorkflowStep(0);
   };
 
   const handleWorkflowComplete = (results) => {
     setWorkflowResults(results);
     setCurrentView('results');
-    setIsProcessing(false);
     
     // Add to processed patients if not already processed
     if (!processedPatients.find(p => p.id === selectedPatient.id)) {
@@ -47,23 +42,17 @@ function App() {
   const handleBackToDashboard = () => {
     setCurrentView('dashboard');
     setSelectedPatient(null);
-    setWorkflowStep(0);
     setWorkflowResults(null);
-    setIsProcessing(false);
   };
 
   const handleBackToPatientSelector = () => {
     setCurrentView('patient-selector');
     setSelectedPatient(null);
-    setWorkflowStep(0);
     setWorkflowResults(null);
-    setIsProcessing(false);
   };
 
   const handleStartProcessing = () => {
     setCurrentView('processing');
-    setIsProcessing(true);
-    setWorkflowStep(0);
   };
 
   return (

@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { 
   ArrowLeftIcon, 
   PlayIcon,
-  CheckCircleIcon,
   ClockIcon,
   UserIcon,
   DocumentCheckIcon,

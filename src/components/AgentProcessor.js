@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   CheckCircleIcon, 
   ClockIcon, 
@@ -71,183 +71,187 @@ const AgentProcessor = ({ patient, onComplete, onBack }) => {
   ];
 
   useEffect(() => {
+    const startProcessing = async () => {
+      setIsProcessing(true);
+      setCurrentStep(0);
+      setCompletedSteps([]);
+      setWorkflowState({
+        interactions: [],
+        auditLog: [],
+        eligibilityVerified: false,
+        documentsRequired: [],
+        documentsSubmitted: [],
+        workRequirementsMet: false,
+        reminders: [],
+        multilingualSupported: false,
+        complianceStatus: 'pending'
+      });
+
+      for (let i = 0; i < agents.length; i++) {
+        setCurrentStep(i);
+        
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, agents[i].duration));
+        
+        // Update workflow state based on agent
+        const newState = { ...workflowState };
+        const timestamp = new Date().toISOString();
+        
+        switch (i) {
+          case 0: // Eligibility Verification
+            newState.eligibilityVerified = true;
+            if (patient.eligibility.requiredDocuments.length > 0) {
+              newState.documentsRequired = patient.eligibility.requiredDocuments;
+            }
+            newState.interactions.push({
+              timestamp,
+              agent: 'eligibility_verification',
+              action: 'verify_status',
+              result: 'verified',
+              confidence: 0.97,
+              processingTime: '1.2s',
+              details: `Status: ${patient.eligibility.status}, Renewal: ${patient.eligibility.renewalDate}`
+            });
+            break;
+            
+          case 1: // Document Intelligence
+            const documentsSubmitted = patient.eligibility.requiredDocuments.slice(0, 
+              Math.floor(patient.eligibility.requiredDocuments.length * 0.7));
+            newState.documentsSubmitted = documentsSubmitted;
+            newState.interactions.push({
+              timestamp,
+              agent: 'document_intelligence',
+              action: 'validate_documents',
+              result: 'processed',
+              confidence: 0.94,
+              processingTime: '2.1s',
+              details: `Processed ${documentsSubmitted.length}/${patient.eligibility.requiredDocuments.length} documents`
+            });
+            break;
+            
+          case 2: // Work Compliance
+            if (patient.workRequirement.required) {
+              newState.workRequirementsMet = patient.workRequirement.hoursReported >= 80;
+              newState.interactions.push({
+                timestamp,
+                agent: 'work_compliance',
+                action: 'verify_hours',
+                result: newState.workRequirementsMet ? 'compliant' : 'non_compliant',
+                confidence: 0.99,
+                processingTime: '0.8s',
+                details: `Hours: ${patient.workRequirement.hoursReported}/80`
+              });
+            } else {
+              newState.workRequirementsMet = true;
+              newState.interactions.push({
+                timestamp,
+                agent: 'work_compliance',
+                action: 'verify_hours',
+                result: 'exempt',
+                confidence: 1.0,
+                processingTime: '0.8s',
+                details: 'Work requirements not applicable'
+              });
+            }
+            break;
+            
+          case 3: // Smart Notifications
+            const reminders = [];
+            if (patient.eligibility.status === 'renewal_needed') {
+              reminders.push('Renewal reminder generated');
+            }
+            if (newState.documentsRequired.length > newState.documentsSubmitted.length) {
+              reminders.push('Document submission reminder');
+            }
+            if (patient.workRequirement.required && !newState.workRequirementsMet) {
+              reminders.push('Work hours reporting reminder');
+            }
+            newState.reminders = reminders;
+            newState.interactions.push({
+              timestamp,
+              agent: 'smart_notifications',
+              action: 'generate_reminders',
+              result: 'sent',
+              confidence: 0.96,
+              processingTime: '0.5s',
+              details: `Generated ${reminders.length} personalized reminders`
+            });
+            break;
+            
+          case 4: // Language Services
+            if (patient.contact.language !== 'English') {
+              newState.multilingualSupported = true;
+              newState.interactions.push({
+                timestamp,
+                agent: 'language_services',
+                action: 'translate_content',
+                result: 'translated',
+                confidence: 0.98,
+                processingTime: '1.0s',
+                details: `Content translated to ${patient.contact.language}`
+              });
+            } else {
+              newState.multilingualSupported = false;
+              newState.interactions.push({
+                timestamp,
+                agent: 'language_services',
+                action: 'language_check',
+                result: 'no_translation_needed',
+                confidence: 1.0,
+                processingTime: '1.0s',
+                details: 'English language - no translation required'
+              });
+            }
+            break;
+            
+          case 5: // Compliance Assurance
+            const complianceIssues = [];
+            if (patient.workRequirement.required && !newState.workRequirementsMet) {
+              complianceIssues.push('Work requirements not met');
+            }
+            if (newState.documentsRequired.length > newState.documentsSubmitted.length) {
+              complianceIssues.push('Missing required documents');
+            }
+            
+            newState.complianceStatus = complianceIssues.length === 0 ? 'compliant' : 'non_compliant';
+            newState.complianceIssues = complianceIssues;
+            newState.interactions.push({
+              timestamp,
+              agent: 'compliance_assurance',
+              action: 'verify_compliance',
+              result: newState.complianceStatus,
+              confidence: 1.0,
+              processingTime: '0.3s',
+              details: complianceIssues.length === 0 ? 'All compliance requirements met' : `${complianceIssues.length} issues identified`
+            });
+            break;
+            
+          default:
+            // Default case for any unexpected step
+            break;
+        }
+        
+        setWorkflowState(newState);
+        setCompletedSteps(prev => [...prev, i]);
+      }
+      
+      // Complete workflow
+      setCurrentStep(-1);
+      setIsProcessing(false);
+      setProcessingComplete(true);
+      
+      setTimeout(() => {
+        onComplete(workflowState);
+      }, 1000);
+    };
+
     // Auto-start processing when component mounts
     const timer = setTimeout(() => {
       startProcessing();
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
-
-  const startProcessing = async () => {
-    setIsProcessing(true);
-    setCurrentStep(0);
-    setCompletedSteps([]);
-    setWorkflowState({
-      interactions: [],
-      auditLog: [],
-      eligibilityVerified: false,
-      documentsRequired: [],
-      documentsSubmitted: [],
-      workRequirementsMet: false,
-      reminders: [],
-      multilingualSupported: false,
-      complianceStatus: 'pending'
-    });
-
-    for (let i = 0; i < agents.length; i++) {
-      setCurrentStep(i);
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, agents[i].duration));
-      
-      // Update workflow state based on agent
-      const newState = { ...workflowState };
-      const timestamp = new Date().toISOString();
-      
-      switch (i) {
-        case 0: // Eligibility Verification
-          newState.eligibilityVerified = true;
-          if (patient.eligibility.requiredDocuments.length > 0) {
-            newState.documentsRequired = patient.eligibility.requiredDocuments;
-          }
-          newState.interactions.push({
-            timestamp,
-            agent: 'eligibility_verification',
-            action: 'verify_status',
-            result: 'verified',
-            confidence: 0.97,
-            processingTime: '1.2s',
-            details: `Status: ${patient.eligibility.status}, Renewal: ${patient.eligibility.renewalDate}`
-          });
-          break;
-          
-        case 1: // Document Intelligence
-          const documentsSubmitted = patient.eligibility.requiredDocuments.slice(0, 
-            Math.floor(patient.eligibility.requiredDocuments.length * 0.7));
-          newState.documentsSubmitted = documentsSubmitted;
-          newState.interactions.push({
-            timestamp,
-            agent: 'document_intelligence',
-            action: 'validate_documents',
-            result: 'processed',
-            confidence: 0.94,
-            processingTime: '2.1s',
-            details: `Processed ${documentsSubmitted.length}/${patient.eligibility.requiredDocuments.length} documents`
-          });
-          break;
-          
-        case 2: // Work Compliance
-          if (patient.workRequirement.required) {
-            newState.workRequirementsMet = patient.workRequirement.hoursReported >= 80;
-            newState.interactions.push({
-              timestamp,
-              agent: 'work_compliance',
-              action: 'verify_hours',
-              result: newState.workRequirementsMet ? 'compliant' : 'non_compliant',
-              confidence: 0.99,
-              processingTime: '0.8s',
-              details: `Hours: ${patient.workRequirement.hoursReported}/80`
-            });
-          } else {
-            newState.workRequirementsMet = true;
-            newState.interactions.push({
-              timestamp,
-              agent: 'work_compliance',
-              action: 'verify_hours',
-              result: 'exempt',
-              confidence: 1.0,
-              processingTime: '0.8s',
-              details: 'Work requirements not applicable'
-            });
-          }
-          break;
-          
-        case 3: // Smart Notifications
-          const reminders = [];
-          if (patient.eligibility.status === 'renewal_needed') {
-            reminders.push('Renewal reminder generated');
-          }
-          if (newState.documentsRequired.length > newState.documentsSubmitted.length) {
-            reminders.push('Document submission reminder');
-          }
-          if (patient.workRequirement.required && !newState.workRequirementsMet) {
-            reminders.push('Work hours reporting reminder');
-          }
-          newState.reminders = reminders;
-          newState.interactions.push({
-            timestamp,
-            agent: 'smart_notifications',
-            action: 'generate_reminders',
-            result: 'sent',
-            confidence: 0.96,
-            processingTime: '0.5s',
-            details: `Generated ${reminders.length} personalized reminders`
-          });
-          break;
-          
-        case 4: // Language Services
-          if (patient.contact.language !== 'English') {
-            newState.multilingualSupported = true;
-            newState.interactions.push({
-              timestamp,
-              agent: 'language_services',
-              action: 'translate_content',
-              result: 'translated',
-              confidence: 0.98,
-              processingTime: '1.0s',
-              details: `Content translated to ${patient.contact.language}`
-            });
-          } else {
-            newState.multilingualSupported = false;
-            newState.interactions.push({
-              timestamp,
-              agent: 'language_services',
-              action: 'language_check',
-              result: 'no_translation_needed',
-              confidence: 1.0,
-              processingTime: '1.0s',
-              details: 'English language - no translation required'
-            });
-          }
-          break;
-          
-        case 5: // Compliance Assurance
-          const complianceIssues = [];
-          if (patient.workRequirement.required && !newState.workRequirementsMet) {
-            complianceIssues.push('Work requirements not met');
-          }
-          if (newState.documentsRequired.length > newState.documentsSubmitted.length) {
-            complianceIssues.push('Missing required documents');
-          }
-          
-          newState.complianceStatus = complianceIssues.length === 0 ? 'compliant' : 'non_compliant';
-          newState.complianceIssues = complianceIssues;
-          newState.interactions.push({
-            timestamp,
-            agent: 'compliance_assurance',
-            action: 'verify_compliance',
-            result: newState.complianceStatus,
-            confidence: 1.0,
-            processingTime: '0.3s',
-            details: complianceIssues.length === 0 ? 'All compliance requirements met' : `${complianceIssues.length} issues identified`
-          });
-          break;
-      }
-      
-      setWorkflowState(newState);
-      setCompletedSteps(prev => [...prev, i]);
-    }
-    
-    // Complete workflow
-    setCurrentStep(-1);
-    setIsProcessing(false);
-    setProcessingComplete(true);
-    
-    setTimeout(() => {
-      onComplete(workflowState);
-    }, 1000);
-  };
+  }, [patient, onComplete]);
 
   const getStepStatus = (index) => {
     if (completedSteps.includes(index)) return 'completed';

@@ -33,6 +33,8 @@ const ResultsView = ({ patient, results, onBackToDashboard, onProcessAnother }) 
     return isCompliant ? CheckCircleIcon : ExclamationTriangleIcon;
   };
 
+  const ComplianceIcon = getComplianceIcon();
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
@@ -50,9 +52,7 @@ const ResultsView = ({ patient, results, onBackToDashboard, onProcessAnother }) 
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          {React.createElement(getComplianceIcon(), { 
-            className: `h-10 w-10 ${getComplianceColor()}` 
-          })}
+          <ComplianceIcon className={`h-10 w-10 ${getComplianceColor()}`} />
         </motion.div>
         
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
