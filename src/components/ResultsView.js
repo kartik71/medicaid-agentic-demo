@@ -115,7 +115,7 @@ const ResultsView = ({ patient, results, onBackToDashboard, onProcessAnother }) 
             </div>
             <TrophyIcon className="h-10 w-10 text-emerald-600" />
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Patient Summary */}

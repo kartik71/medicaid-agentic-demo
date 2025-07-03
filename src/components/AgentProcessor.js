@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   CheckCircleIcon, 
@@ -70,31 +70,34 @@ const AgentProcessor = ({ patient, onComplete, onBack }) => {
     }
   ];
 
-  useEffect(() => {
-    const startProcessing = async () => {
-      setIsProcessing(true);
-      setCurrentStep(0);
-      setCompletedSteps([]);
-      setWorkflowState({
-        interactions: [],
-        auditLog: [],
-        eligibilityVerified: false,
-        documentsRequired: [],
-        documentsSubmitted: [],
-        workRequirementsMet: false,
-        reminders: [],
-        multilingualSupported: false,
-        complianceStatus: 'pending'
-      });
+  const startProcessing = useCallback(async () => {
+    setIsProcessing(true);
+    setCurrentStep(0);
+    setCompletedSteps([]);
+    
+    const initialState = {
+      interactions: [],
+      auditLog: [],
+      eligibilityVerified: false,
+      documentsRequired: [],
+      documentsSubmitted: [],
+      workRequirementsMet: false,
+      reminders: [],
+      multilingualSupported: false,
+      complianceStatus: 'pending'
+    };
+    
+    setWorkflowState(initialState);
 
-      for (let i = 0; i < agents.length; i++) {
-        setCurrentStep(i);
-        
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, agents[i].duration));
-        
-        // Update workflow state based on agent
-        const newState = { ...workflowState };
+    for (let i = 0; i < agents.length; i++) {
+      setCurrentStep(i);
+      
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, agents[i].duration));
+      
+      // Update workflow state based on agent
+      setWorkflowState(prevState => {
+        const newState = { ...prevState };
         const timestamp = new Date().toISOString();
         
         switch (i) {
@@ -231,27 +234,33 @@ const AgentProcessor = ({ patient, onComplete, onBack }) => {
             break;
         }
         
-        setWorkflowState(newState);
-        setCompletedSteps(prev => [...prev, i]);
-      }
+        return newState;
+      });
       
-      // Complete workflow
-      setCurrentStep(-1);
-      setIsProcessing(false);
-      setProcessingComplete(true);
-      
-      setTimeout(() => {
-        onComplete(workflowState);
-      }, 1000);
-    };
+      setCompletedSteps(prev => [...prev, i]);
+    }
+    
+    // Complete workflow
+    setCurrentStep(-1);
+    setIsProcessing(false);
+    setProcessingComplete(true);
+    
+    setTimeout(() => {
+      setWorkflowState(finalState => {
+        onComplete(finalState);
+        return finalState;
+      });
+    }, 1000);
+  }, [patient, onComplete, agents]);
 
+  useEffect(() => {
     // Auto-start processing when component mounts
     const timer = setTimeout(() => {
       startProcessing();
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [patient, onComplete]);
+  }, [startProcessing]);
 
   const getStepStatus = (index) => {
     if (completedSteps.includes(index)) return 'completed';
