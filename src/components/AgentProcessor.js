@@ -12,63 +12,64 @@ import {
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
+// Move agents array outside component to prevent useCallback dependency changes
+const agents = [
+  {
+    id: 'eligibility',
+    name: 'Eligibility Verification',
+    icon: DocumentCheckIcon,
+    description: 'Analyzing member status and requirements',
+    color: 'blue',
+    duration: 1200
+  },
+  {
+    id: 'documents',
+    name: 'Document Intelligence',
+    icon: DocumentCheckIcon,
+    description: 'AI-powered document validation and processing',
+    color: 'green',
+    duration: 2100
+  },
+  {
+    id: 'work',
+    name: 'Work Compliance',
+    icon: BriefcaseIcon,
+    description: 'Automated work requirement verification',
+    color: 'purple',
+    duration: 800
+  },
+  {
+    id: 'notifications',
+    name: 'Smart Notifications',
+    icon: BellIcon,
+    description: 'Personalized, multilingual communications',
+    color: 'yellow',
+    duration: 500
+  },
+  {
+    id: 'language',
+    name: 'Language Services',
+    icon: GlobeAltIcon,
+    description: 'Real-time translation and cultural adaptation',
+    color: 'indigo',
+    duration: 1000
+  },
+  {
+    id: 'compliance',
+    name: 'Compliance Assurance',
+    icon: ShieldCheckIcon,
+    description: 'Regulatory compliance and audit trail generation',
+    color: 'emerald',
+    duration: 300
+  }
+];
+
 const AgentProcessor = ({ patient, onComplete, onBack }) => {
   const [currentStep, setCurrentStep] = useState(-1);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [workflowState, setWorkflowState] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingComplete, setProcessingComplete] = useState(false);
-
-  const agents = [
-    {
-      id: 'eligibility',
-      name: 'Eligibility Verification',
-      icon: DocumentCheckIcon,
-      description: 'Analyzing member status and requirements',
-      color: 'blue',
-      duration: 1200
-    },
-    {
-      id: 'documents',
-      name: 'Document Intelligence',
-      icon: DocumentCheckIcon,
-      description: 'AI-powered document validation and processing',
-      color: 'green',
-      duration: 2100
-    },
-    {
-      id: 'work',
-      name: 'Work Compliance',
-      icon: BriefcaseIcon,
-      description: 'Automated work requirement verification',
-      color: 'purple',
-      duration: 800
-    },
-    {
-      id: 'notifications',
-      name: 'Smart Notifications',
-      icon: BellIcon,
-      description: 'Personalized, multilingual communications',
-      color: 'yellow',
-      duration: 500
-    },
-    {
-      id: 'language',
-      name: 'Language Services',
-      icon: GlobeAltIcon,
-      description: 'Real-time translation and cultural adaptation',
-      color: 'indigo',
-      duration: 1000
-    },
-    {
-      id: 'compliance',
-      name: 'Compliance Assurance',
-      icon: ShieldCheckIcon,
-      description: 'Regulatory compliance and audit trail generation',
-      color: 'emerald',
-      duration: 300
-    }
-  ];
 
   const startProcessing = useCallback(async () => {
     setIsProcessing(true);
@@ -251,7 +252,7 @@ const AgentProcessor = ({ patient, onComplete, onBack }) => {
         return finalState;
       });
     }, 1000);
-  }, [patient, onComplete, agents]);
+  }, [patient, onComplete]);
 
   useEffect(() => {
     // Auto-start processing when component mounts

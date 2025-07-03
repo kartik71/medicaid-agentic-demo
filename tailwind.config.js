@@ -3,6 +3,16 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
+  safelist: [
+    // Dynamic color classes used in components
+    'text-blue-600', 'text-green-600', 'text-purple-600', 'text-yellow-600', 'text-indigo-600', 'text-emerald-600', 'text-red-600',
+    'bg-blue-50', 'bg-green-50', 'bg-purple-50', 'bg-yellow-50', 'bg-indigo-50', 'bg-emerald-50', 'bg-red-50',
+    'bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-yellow-100', 'bg-indigo-100', 'bg-emerald-100', 'bg-red-100',
+    'bg-blue-200', 'bg-green-200', 'bg-purple-200', 'bg-yellow-200', 'bg-indigo-200', 'bg-emerald-200', 'bg-red-200',
+    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-yellow-500', 'bg-indigo-500', 'bg-emerald-500', 'bg-red-500',
+    'border-blue-200', 'border-green-200', 'border-purple-200', 'border-yellow-200', 'border-indigo-200', 'border-emerald-200', 'border-red-200',
+    'text-blue-800', 'text-green-800', 'text-purple-800', 'text-yellow-800', 'text-indigo-800', 'text-emerald-800', 'text-red-800',
+  ],
   theme: {
     extend: {
       colors: {
