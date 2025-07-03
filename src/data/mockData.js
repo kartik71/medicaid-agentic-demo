@@ -1,6 +1,6 @@
-export const mockMembers = [
+export const mockPatients = [
   {
-    id: '1',
+    id: 'MED-001',
     firstName: 'Maria',
     lastName: 'Rodriguez',
     scenario: 'renewal_needed',
@@ -19,7 +19,7 @@ export const mockMembers = [
     }
   },
   {
-    id: '2',
+    id: 'MED-002',
     firstName: 'James',
     lastName: 'Johnson',
     scenario: 'work_compliance',
@@ -38,7 +38,7 @@ export const mockMembers = [
     }
   },
   {
-    id: '3',
+    id: 'MED-003',
     firstName: 'Sarah',
     lastName: 'Chen',
     scenario: 'documents_missing',
@@ -57,7 +57,7 @@ export const mockMembers = [
     }
   },
   {
-    id: '4',
+    id: 'MED-004',
     firstName: 'Ahmed',
     lastName: 'Hassan',
     scenario: 'multilingual',
@@ -76,7 +76,7 @@ export const mockMembers = [
     }
   },
   {
-    id: '5',
+    id: 'MED-005',
     firstName: 'Jennifer',
     lastName: 'Smith',
     scenario: 'compliant',
@@ -92,6 +92,25 @@ export const mockMembers = [
     workRequirement: {
       required: false,
       hoursReported: 0
+    }
+  },
+  {
+    id: 'MED-006',
+    firstName: 'Carlos',
+    lastName: 'Mendoza',
+    scenario: 'renewal_needed',
+    eligibility: {
+      status: 'renewal_needed',
+      renewalDate: '2024-01-30',
+      requiredDocuments: ['income_verification', 'household_composition']
+    },
+    contact: {
+      language: 'Spanish',
+      preferredContactMethod: 'Phone'
+    },
+    workRequirement: {
+      required: true,
+      hoursReported: 72
     }
   }
 ];

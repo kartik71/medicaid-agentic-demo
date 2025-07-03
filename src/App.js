@@ -1,101 +1,157 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
-import ExecutiveDashboard from './components/ExecutiveDashboard';
-import AgentWorkflow from './components/AgentWorkflow';
-import MemberSelector from './components/MemberSelector';
-import ResultsPanel from './components/ResultsPanel';
-import TechnologyStack from './components/TechnologyStack';
-import { mockMembers } from './data/mockData';
+import Dashboard from './components/Dashboard';
+import PatientSelector from './components/PatientSelector';
+import WorkflowStepper from './components/WorkflowStepper';
+import AgentProcessor from './components/AgentProcessor';
+import ResultsView from './components/ResultsView';
+import { mockPatients } from './data/mockData';
 
 function App() {
-  const [selectedMember, setSelectedMember] = useState(null);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [workflowStep, setWorkflowStep] = useState(0);
   const [workflowResults, setWorkflowResults] = useState(null);
+  const [processedPatients, setProcessedPatients] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processedMembers, setProcessedMembers] = useState([]);
-  const [totalSavings, setTotalSavings] = useState(0);
 
+  // Initialize with dashboard view
   useEffect(() => {
-    // Initialize with first member
-    if (mockMembers.length > 0) {
-      setSelectedMember(mockMembers[0]);
-    }
+    setCurrentView('dashboard');
   }, []);
 
-  const handleMemberSelect = (member) => {
-    setSelectedMember(member);
+  const handleStartWorkflow = () => {
+    setCurrentView('patient-selector');
+    setWorkflowStep(0);
     setWorkflowResults(null);
+  };
+
+  const handlePatientSelected = (patient) => {
+    setSelectedPatient(patient);
+    setCurrentView('workflow');
+    setWorkflowStep(0);
   };
 
   const handleWorkflowComplete = (results) => {
     setWorkflowResults(results);
+    setCurrentView('results');
     setIsProcessing(false);
     
-    // Add to processed members if not already processed
-    if (!processedMembers.find(m => m.id === selectedMember.id)) {
-      setProcessedMembers(prev => [...prev, selectedMember]);
-      setTotalSavings(prev => prev + 138); // Cost savings per case
+    // Add to processed patients if not already processed
+    if (!processedPatients.find(p => p.id === selectedPatient.id)) {
+      setProcessedPatients(prev => [...prev, { ...selectedPatient, results }]);
     }
   };
 
-  const startWorkflow = () => {
-    setIsProcessing(true);
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
+    setSelectedPatient(null);
+    setWorkflowStep(0);
     setWorkflowResults(null);
+    setIsProcessing(false);
+  };
+
+  const handleBackToPatientSelector = () => {
+    setCurrentView('patient-selector');
+    setSelectedPatient(null);
+    setWorkflowStep(0);
+    setWorkflowResults(null);
+    setIsProcessing(false);
+  };
+
+  const handleStartProcessing = () => {
+    setCurrentView('processing');
+    setIsProcessing(true);
+    setWorkflowStep(0);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Header />
       
-      <main className="container mx-auto px-4 py-8 space-y-12">
-        {/* Executive Dashboard */}
-        <ExecutiveDashboard 
-          processedCount={processedMembers.length}
-          totalSavings={totalSavings}
-        />
-
-        {/* Main Demo Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Member Selection & Controls */}
-          <div className="lg:col-span-1 space-y-6">
-            <MemberSelector
-              members={mockMembers}
-              selectedMember={selectedMember}
-              onMemberSelect={handleMemberSelect}
-              onStartWorkflow={startWorkflow}
-              isProcessing={isProcessing}
-            />
-          </div>
-
-          {/* Agent Workflow */}
-          <div className="lg:col-span-2">
-            <AgentWorkflow
-              member={selectedMember}
-              isProcessing={isProcessing}
-              onComplete={handleWorkflowComplete}
-            />
-          </div>
-        </div>
-
-        {/* Results Panel */}
-        <AnimatePresence>
-          {workflowResults && (
+      <main className="container mx-auto px-4 py-8">
+        <AnimatePresence mode="wait">
+          {currentView === 'dashboard' && (
             <motion.div
+              key="dashboard"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
             >
-              <ResultsPanel 
-                results={workflowResults} 
-                member={selectedMember}
+              <Dashboard 
+                processedCount={processedPatients.length}
+                onStartWorkflow={handleStartWorkflow}
+              />
+            </motion.div>
+          )}
+
+          {currentView === 'patient-selector' && (
+            <motion.div
+              key="patient-selector"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <PatientSelector
+                patients={mockPatients}
+                onPatientSelected={handlePatientSelected}
+                onBack={handleBackToDashboard}
+              />
+            </motion.div>
+          )}
+
+          {currentView === 'workflow' && selectedPatient && (
+            <motion.div
+              key="workflow"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <WorkflowStepper
+                patient={selectedPatient}
+                onStartProcessing={handleStartProcessing}
+                onBack={handleBackToPatientSelector}
+              />
+            </motion.div>
+          )}
+
+          {currentView === 'processing' && selectedPatient && (
+            <motion.div
+              key="processing"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <AgentProcessor
+                patient={selectedPatient}
+                onComplete={handleWorkflowComplete}
+                onBack={() => setCurrentView('workflow')}
+              />
+            </motion.div>
+          )}
+
+          {currentView === 'results' && workflowResults && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ResultsView
+                patient={selectedPatient}
+                results={workflowResults}
+                onBackToDashboard={handleBackToDashboard}
+                onProcessAnother={handleBackToPatientSelector}
               />
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Technology Stack */}
-        <TechnologyStack />
       </main>
     </div>
   );

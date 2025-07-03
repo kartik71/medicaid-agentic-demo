@@ -10,7 +10,7 @@ const Header = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -18,8 +18,8 @@ const Header = () => {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex items-center justify-center mb-4"
           >
-            <HeartIcon className="h-12 w-12 mr-3" />
-            <h1 className="text-5xl font-bold">Medicaid Assist</h1>
+            <HeartIcon className="h-10 w-10 mr-3" />
+            <h1 className="text-4xl font-bold">Medicaid Assist</h1>
           </motion.div>
           
           <motion.p 
